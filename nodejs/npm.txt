@@ -1,0 +1,10 @@
+NPM: Nodejs에서 많이 쓰이는 패키지매니저
+      Nodejs설치시 자동설치
+===========================================
+npm init
+  package.json 파일 생성
+  = 패키지정보생성
+npm install -g
+  컴퓨터 전역에서 사용
+npm install -s
+  package.json에 모듈 업데이트
