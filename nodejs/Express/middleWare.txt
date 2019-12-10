@@ -1,0 +1,29 @@
+미들웨어
+
+body parser
+npm install body-parser -s
+request에 담긴 내용을 body에 출력
+
+->post데이터 받은 후
+console.log(request.body);
+[Object: null prototype] { title: 'jghj', description: 'hjg' }
+
+
+compression
+npm install compression
+압축기능
+
+
+// 1번 미들웨어
+app.use(function(request,response,next){
+if(~) next('route');
+else next();
+},
+// 2번 미들웨어
+function(function(request,response,next){
+response.send("~");
+});
+// 3번 미들웨어
+app.use(function(request,response,next){
+response.send("~");
+});
