@@ -1,0 +1,5 @@
+Express generator
+
+npm install express=generator -g
+
+시작-> npm start
