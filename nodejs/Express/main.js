@@ -6,6 +6,15 @@ var path = require('path');
 var sanitizeHtml = require('sanitize-html');
 var qs = require('querystring');
 
+//express 보안1
+var helmet = require('helmet');
+app.use(helmet());
+
+//express 라우터
+var router = require('./router/router.js');
+app.use('/', router);//router안의 주소는 '/'의 주소는 생략
+                      //use('/topic', router) -> '/topic/main' > '/main'
+
 //정적파일처리
 //http://localhost:3000/test.png
 //''에서 정적파일을 찾는다
@@ -38,46 +47,6 @@ app.get('*', function(req, res, next){
     console.log(req.f_list);
     next();
   });
-});
-
-app.get('/', function (req, res) {
-  //fs.readdir('./data', function(error, filelist){
-    var title = 'Welcome';
-    var description = 'Hello, Node.js';
-    //var list = template.list(filelist);
-    var list = template.list(req.f_list);
-    var html = template.HTML(title, list,
-      `<h2>${title}</h2>${description}
-      <br><img src="test.png">`,
-      `<a href="/create">create</a>`
-    );
-    res.send(html);
-  //});
-});
-
-app.get('/page/:pageId', function(request, response) {
-  //fs.readdir('./data', function(error, filelist){
-    var filteredId = path.parse(request.params.pageId).base;
-    fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-      var title = request.params.pageId;
-      var sanitizedTitle = sanitizeHtml(title);
-      var sanitizedDescription = sanitizeHtml(description, {
-        allowedTags:['h1']
-      });
-      //var list = template.list(filelist);
-      var list = template.list(request.f_list);
-      var html = template.HTML(sanitizedTitle, list,
-        `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
-        ` <a href="/create">create</a>
-          <a href="/update/${sanitizedTitle}">update</a>
-          <form action="/delete_process" method="post">
-            <input type="hidden" name="id" value="${sanitizedTitle}">
-            <input type="submit" value="delete">
-          </form>`
-      );
-      response.send(html);
-    });
-  //});
 });
 
 app.get('/create', function(req, res){
@@ -216,11 +185,18 @@ app.listen(3000, function () {
   console.log('Example app listening on port 3000!');
 });
 
-//에러처리
-app.use(function(req, res, next){
-  res.status(404).send("404");
+//에러처리 500
+app.use(function(err, req, res, next){
+  console.log("500에러");
+  console.log(err.stack);
+  res.status(500).send("500");
 });
 
+//에러처리 404
+app.use(function(req, res, next){
+  console.log("404에러");
+  res.status(404).send("404");
+});
 
 /*
 var http = require('http');
