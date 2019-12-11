@@ -4,6 +4,7 @@ module.exports = {
     <!doctype html>
     <html>
     <head>
+      <a href="/login">login</a>
       <title>WEB1 - ${title}</title>
       <meta charset="utf-8">
     </head>
