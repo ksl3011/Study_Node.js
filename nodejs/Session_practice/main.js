@@ -22,12 +22,13 @@ var loginData = {
 }
 
 var auth = function(req, res){
+  console.log("===auth()===");
   var isLogin = false;
   if(req.session.isLogined){
       isLogin = true;
   }
   return isLogin;
-}
+};
 
 var authUI = `<a href="/login">login</a>`;
 
@@ -36,55 +37,38 @@ app.use('*', function(req, res, next){
   if(isLogin){
     authUI = `<a href="/logout_process">logout</a>`;
   }
+  console.log("login?==");
   console.log(isLogin);
+  console.log("=========");
   next();
 });
 
-app.get('/', function (req, res, next) {
+app.get('/createpage', function (req, res, next) {
+  var isauth = auth(req, res);
+  console.log("isauth==");
+  console.log(isauth);
+  console.log("=========");
+  if(!isauth){
+    console.log("not logined");
+    res.redirect(`/`);
+  }else{
     fs.readdir('./data', function(error, filelist){
-      var title = 'Welcome';
-      var description = 'Hello, Node.js';
+      var title = 'create';
       var list = template.list(filelist);
       var html = template.HTML(title, list,
-        `<h2>${title}</h2>${description}`,
-        `<a href="/create">create</a>`,
+        `<form method="post" action="/create_process">
+        <p><input type="text" placeholder="title" name="title"></p>
+        <p><textarea placeholder="description" name="description"></textarea></p>
+        <p><input type="submit"></p>
+        </form>`
+        ,
+        `<a href="/createpage">create</a>`,
         authUI
-      );
-      res.send(html);
-    });
-  });
-
-app.get('/:id', function (req, res, next) {
-    var filteredId = path.parse(req.params.id).base;
-    fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-      fs.readdir('./data', function(error, filelist){
-      var title = req.params.id;
-      console.log(title);
-      var sanitizedTitle = sanitizeHtml(title);
-      var sanitizedDescription = sanitizeHtml(description, {
-        allowedTags:['h1']
-      });
-      var list = template.list(filelist);
-      var html = template.HTML(sanitizedTitle, list,
-        `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
-        ` <a href="/create">create</a>
-          <a href="/update/${sanitizedTitle}">update</a>
-          <form action="delete_process" method="post">
-            <input type="hidden" name="id" value="${sanitizedTitle}">
-            <input type="submit" value="delete">
-          </form>`,
-          authUI
       );
       res.writeHead(200);
       res.end(html);
     });
-  });
-});
-
-app.get('/create', function (req, res, next) {
- 
-    res.end('');
- 
+  }
 });
 
 app.post('/create_process', function (req, res, next) {
@@ -97,7 +81,7 @@ app.post('/create_process', function (req, res, next) {
       var title = post.title;
       var description = post.description;
       fs.writeFile(`data/${title}`, description, 'utf8', function(err){
-        res.writeHead(302, {Location: `/${title}`});
+        res.writeHead(302, {Location: `/p/${title}`});
         res.end();
       })
   });
@@ -105,15 +89,15 @@ app.post('/create_process', function (req, res, next) {
 
 app.get('/update/:id', function (req, res, next) {
   fs.readdir('./data', function(error, filelist){
-    var filteredId = path.parse(res.params.id).base;
+    var filteredId = path.parse(req.params.id).base;
     fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-      var title = queryData.id;
+      var original = filteredId;
       var list = template.list(filelist);
-      var html = template.HTML(title, list,
+      var html = template.HTML(original, list,
         `
         <form action="/update_process" method="post">
-          <input type="hidden" name="id" value="${title}">
-          <p><input type="text" name="title" placeholder="title" value="${title}"></p>
+          <input type="hidden" name="id" value="${original}">
+          <p><input type="text" name="title" placeholder="title" value="${filteredId}"></p>
           <p>
             <textarea name="description" placeholder="description">${description}</textarea>
           </p>
@@ -122,16 +106,15 @@ app.get('/update/:id', function (req, res, next) {
           </p>
         </form>
         `,
-        `<a href="/create">create</a> <a href="/update/${title}">update</a>`,
+        `<a href="/createpage">create</a>`,
         authUI
       );
-      res.writeHead(200);
-      res.end(html);
+      res.send(html);
     });
   });
 });
 
-app.get('/update_process', function (req, res, next) {
+app.post('/update_process', function (req, res, next) {
   var body = '';
   req.on('data', function(data){
       body = body + data;
@@ -143,14 +126,14 @@ app.get('/update_process', function (req, res, next) {
       var description = post.description;
       fs.rename(`data/${id}`, `data/${title}`, function(error){
         fs.writeFile(`data/${title}`, description, 'utf8', function(err){
-          res.writeHead(302, {Location: `/${title}`});
+          res.writeHead(302, {Location: `/p/${title}`});
           res.end();
         })
       });
   });
 });
 
-app.get('/delete_process', function (req, res, next) {
+app.post('/delete_process', function (req, res, next) {
   var body = '';
   req.on('data', function(data){
       body = body + data;
@@ -177,7 +160,7 @@ app.get('/login', function (req, res, next) {
         <p><input type="password" name="password" placeholder="password"></p>
         <p><input type="submit"></p>
       </form>`,
-      `<a href="/create">create</a>`,
+      `<a href="/createpage">create</a>`,
       authUI
     );
     res.writeHead(200);
@@ -185,7 +168,7 @@ app.get('/login', function (req, res, next) {
   });
 });
 
-app.get('/login_process', function (req, res, next) {
+app.post('/login_process', function (req, res, next) {
   var body = '';
   req.on('data', function(data){
       body = body + data;
@@ -210,6 +193,49 @@ app.get('/login_process', function (req, res, next) {
 app.get('/logout_process', function (req, res, next) {
   res.writeHead(302, {Location: '/'});
   res.end();
+});
+
+app.get('/', function (req, res, next) {
+  console.log("==MAIN==");
+  fs.readdir('./data', function(error, filelist){
+    var title = 'Welcome';
+    var description = 'Hello, Node.js';
+    var list = template.list(filelist);
+    var html = template.HTML(title, list,
+      `<h2>${title}</h2>${description}`,
+      `<a href="/createpage">create</a>`,
+      authUI
+    );
+    res.send(html);
+  });
+});
+
+app.get('/p/:id', function (req, res, next) {
+  var filteredId = path.parse(req.params.id).base;
+  fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
+    fs.readdir('./data', function(error, filelist){
+      var title = req.params.id;
+      console.log("title?==");
+      console.log(title);
+      console.log("=========");
+      var sanitizedTitle = sanitizeHtml(title);
+      var sanitizedDescription = sanitizeHtml(description, {
+        allowedTags:['h1']
+      });
+      var list = template.list(filelist);
+      var html = template.HTML(sanitizedTitle, list,
+        `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
+        ` <a href="/createpage">create</a>
+          <a href="/update/${sanitizedTitle}">update</a>
+          <form action="/delete_process" method="post">
+            <input type="hidden" name="id" value="${sanitizedTitle}">
+            <input type="submit" value="delete">
+          </form>`,
+          authUI
+      );
+      res.send(html);
+    });
+  });
 });
 
 app.listen(3000);
