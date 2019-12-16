@@ -181,7 +181,10 @@ app.post('/login_process', function (req, res, next) {
         req.session.isLogined = true;
         req.session.id = `${post.email}`;
         req.session.id = `${post.password}`;
-        res.writeHead(302, {Location: '/'});
+        //세션작업이 끝나기전에 redirection이 실행되면 안되므로 save()사용
+        req.session.save(function(){
+          res.writeHead(302, {Location: '/'});
+        })
         res.end();
       }else{
         console.log("x");
